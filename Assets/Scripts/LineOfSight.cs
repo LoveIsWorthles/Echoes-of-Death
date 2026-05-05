@@ -11,6 +11,10 @@ public class FieldOfView : MonoBehaviour
     public LayerMask obstacleMask; // Tells the rays what blocks vision
     public float meshResolution = 1f; // How many rays to shoot per degree. Higher = smoother, but heavier on CPU.
 
+    [Header("Base (omnidirectional) Radius")]
+    [Tooltip("A short radius around the player that's always visible (360°). Useful to see sides/behind slightly).")]
+    public float baseRadius = 1.5f;
+
     public MeshFilter viewMeshFilter;
     private Mesh viewMesh;
 
@@ -30,24 +34,31 @@ public class FieldOfView : MonoBehaviour
 
     void DrawFieldOfView()
     {
-        int stepCount = Mathf.RoundToInt(viewAngle * meshResolution);
-        float stepAngleSize = viewAngle / stepCount;
+        // We'll sample around the full 360° so we can combine the main cone
+        // (at `viewRadius`) with a short omnidirectional base (`baseRadius`).
+        int stepCount = Mathf.Max(8, Mathf.RoundToInt(360f * meshResolution));
+        float stepAngleSize = 360f / stepCount;
         List<Vector3> viewPoints = new List<Vector3>();
 
-        // 1. Shoot the rays in an arc
+        float forwardAngle = transform.eulerAngles.y;
+
+        // 1. Shoot the rays in a full circle; use `viewRadius` inside the cone, `baseRadius` elsewhere
         for (int i = 0; i <= stepCount; i++)
         {
-            float angle = transform.eulerAngles.y - viewAngle / 2 + stepAngleSize * i;
+            float angle = transform.eulerAngles.y - 180f + stepAngleSize * i;
             Vector3 dir = DirFromAngle(angle, true);
 
-            // If the ray hits an obstacle, add the hit point. Otherwise, add the point at max view radius.
-            if (Physics.Raycast(transform.position, dir, out RaycastHit hit, viewRadius, obstacleMask))
+            bool withinCone = Mathf.Abs(Mathf.DeltaAngle(forwardAngle, angle)) <= viewAngle / 2f;
+            float sampleRadius = withinCone ? viewRadius : baseRadius;
+
+            // If the ray hits an obstacle, add the hit point. Otherwise, add the point at the chosen radius.
+            if (Physics.Raycast(transform.position, dir, out RaycastHit hit, sampleRadius, obstacleMask))
             {
                 viewPoints.Add(hit.point);
             }
             else
             {
-                viewPoints.Add(transform.position + dir * viewRadius);
+                viewPoints.Add(transform.position + dir * sampleRadius);
             }
         }
 
