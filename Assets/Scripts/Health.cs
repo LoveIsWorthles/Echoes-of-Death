@@ -1,6 +1,7 @@
 using UnityEngine;
 
-public class Health : MonoBehaviour
+// 1. Add the IDamageable here
+public class Health : MonoBehaviour, IDamagable 
 {
     public int maxHealth = 1;
     public int currentHealth;
@@ -11,6 +12,14 @@ public class Health : MonoBehaviour
         currentHealth = maxHealth;
     }
 
+    // 2. Added this NEW method required by the IDamageable interface
+    public void TakeDamage(float damageAmount)
+    {
+        
+        TakeDamage(Mathf.RoundToInt(damageAmount));
+    }
+
+    // 3. Keep your existing logic exactly the same for the rest
     public void TakeDamage(int damage)
     {
         if (isDead) return;
