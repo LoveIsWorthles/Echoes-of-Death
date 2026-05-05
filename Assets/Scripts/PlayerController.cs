@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
@@ -11,19 +12,27 @@ public class PlayerController : MonoBehaviour
     private Camera mainCamera; // We need the camera to track the mouse
     private Vector3 movement;
 
+    // Input Actions
+    private InputAction moveAction;
+    private InputAction pointAction;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
         // Automatically find the Main Camera in the scene
-        mainCamera = Camera.main; 
+        mainCamera = Camera.main;
+
+        moveAction = InputSystem.actions.FindAction("Move");
+        pointAction = InputSystem.actions.FindAction("Point");
     }
 
     void Update()
     {
         // 1. Capture Movement Input
-        movement.x = Input.GetAxisRaw("Horizontal");
-        movement.z = Input.GetAxisRaw("Vertical");
+        Vector2 moveInput = moveAction.ReadValue<Vector2>();
+        movement.x = moveInput.x;
+        movement.z = moveInput.y;
         movement.y = 0f;
         movement = movement.normalized;
 
@@ -45,8 +54,8 @@ public class PlayerController : MonoBehaviour
         // Create an invisible mathematical flat plane at the character's height
         Plane groundPlane = new Plane(Vector3.up, new Vector3(0, transform.position.y, 0));
 
-        // Draw a line from the camera through the mouse cursor
-        Ray cameraRay = mainCamera.ScreenPointToRay(Input.mousePosition);
+        Vector2 mousePosition = pointAction.ReadValue<Vector2>();
+        Ray cameraRay = mainCamera.ScreenPointToRay(mousePosition);
 
         // If the line hits our invisible ground plane...
         if (groundPlane.Raycast(cameraRay, out float hitDistance))
