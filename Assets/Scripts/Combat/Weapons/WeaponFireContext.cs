@@ -1,16 +1,44 @@
 using UnityEngine;
 
-public class WeaponFireContext : MonoBehaviour
+[System.Serializable]
+public struct WeaponFireContext
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public GameObject Owner;
+    public Object SourceDefinition;
+    public Faction SourceFaction;
+    public Vector3 FirePoint;
+    public Quaternion FireRotation;
+    public Vector3 Direction;
+    public LayerMask HitMask;
+    public Transform ProjectileParent;
+
+    public WeaponFireContext(
+        GameObject owner,
+        Object sourceDefinition,
+        Faction sourceFaction,
+        Vector3 firePoint,
+        Quaternion fireRotation,
+        Vector3 direction,
+        LayerMask hitMask,
+        Transform projectileParent)
     {
-        
+        Owner = owner;
+        SourceDefinition = sourceDefinition;
+        SourceFaction = sourceFaction;
+        FirePoint = firePoint;
+        FireRotation = fireRotation;
+        Direction = direction;
+        HitMask = hitMask;
+        ProjectileParent = projectileParent;
     }
 
-    // Update is called once per frame
-    void Update()
+    public Vector3 GetDirection()
     {
-        
+        if (Direction.sqrMagnitude > 0.0001f)
+        {
+            return Direction.normalized;
+        }
+
+        return (FireRotation * Vector3.forward).normalized;
     }
 }

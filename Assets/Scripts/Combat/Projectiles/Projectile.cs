@@ -32,7 +32,7 @@ public class Projectile : MonoBehaviour
     private ScriptableObject sourceDefinition;
     private Faction sourceFaction = Faction.Neutral;
     private int damageAmount = 1;
-    private DamageType damageType = DamageType.Projectile;
+    private DamageType damageType = DamageType.Bullet;
     private Vector3 travelDirection = Vector3.forward;
     private float speed = 10f;
     private float lifetime;

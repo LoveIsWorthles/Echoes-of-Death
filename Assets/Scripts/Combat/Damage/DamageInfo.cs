@@ -31,6 +31,6 @@ public struct DamageInfo
 
     public static DamageInfo FromAmount(int amount)
     {
-        return new DamageInfo(amount, DamageType.Projectile, null, null, Vector3.zero, Vector3.zero, Faction.Neutral);
+        return new DamageInfo(amount, DamageType.Bullet, null, null, Vector3.zero, Vector3.zero, Faction.Neutral);
     }
 }

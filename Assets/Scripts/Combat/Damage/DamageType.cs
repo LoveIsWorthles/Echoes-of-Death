@@ -1,5 +1,5 @@
 public enum DamageType
 {
-    Projectile,
+    Bullet,
     Explosive
 }
