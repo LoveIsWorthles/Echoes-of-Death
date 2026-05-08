@@ -1,16 +1,25 @@
 using UnityEngine;
 
-public class LoadoutDefinition : MonoBehaviour
+[CreateAssetMenu(menuName = "Combat/Loadouts/Loadout Definition", fileName = "LoadoutDefinition")]
+public class LoadoutDefinition : ScriptableObject
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    [Header("Starting Weapons")]
+    [SerializeField]
+    private WeaponDefinition startingPrimary;
+    
+    [SerializeField]
+    private WeaponDefinition startingSecondary;
+    
+    [SerializeField]
+    private bool startWithSecondaryActive = true;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    [Header("Debug")]
+    [SerializeField]
+    private string notes;
+
+    public WeaponDefinition StartingPrimary => startingPrimary;
+
+    public WeaponDefinition StartingSecondary => startingSecondary;
+
+    public bool StartWithSecondaryActive => startWithSecondaryActive;
 }

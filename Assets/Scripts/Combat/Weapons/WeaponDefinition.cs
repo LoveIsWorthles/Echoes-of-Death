@@ -28,6 +28,11 @@ public class WeaponDefinition : ScriptableObject
     [Min(0)] public int pierceCount;
     public bool friendlyFire;
 
+    [Header("Shield")]
+    [Min(1)] public int shieldMaxCharges = 5;
+    [Range(0f, 360f)] public float frontBlockAngle = 120f;
+    [Range(0f, 360f)] public float backBlockAngle = 60f;
+
     [Header("FX")]
     public AudioClip fireSound;
     public GameObject muzzleFlashPrefab;

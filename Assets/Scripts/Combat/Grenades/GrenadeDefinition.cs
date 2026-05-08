@@ -1,16 +1,22 @@
 using UnityEngine;
 
-public class GrenadeDefinition : MonoBehaviour
+[CreateAssetMenu(menuName = "Combat/Grenades/Grenade Definition", fileName = "GrenadeDefinition")]
+public class GrenadeDefinition : ScriptableObject
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    [Header("Identity")]
+    public string displayName;
+    public string grenadeId;
+    public GrenadeType grenadeType = GrenadeType.Frag;
+    public Sprite icon;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    [Header("Future Projectile")]
+    public GameObject grenadeProjectilePrefab;
+
+    [Header("Throw Settings")]
+    [Min(0f)] public float throwSpeed = 12f;
+    [Min(0f)] public float throwRange = 12f;
+    [Min(0f)] public float fuseTime = 3f;
+    [Min(0f)] public float radius = 2.5f;
+    [Min(0)] public int damage = 0;
+    [Min(0)] public int maxCarryCount = 3;
 }
