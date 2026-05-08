@@ -21,12 +21,21 @@ public class Grenade : MonoBehaviour
         // 2. Loop through every object we hit
         foreach (Collider hitObject in objectsInBlast)
         {
-            // 3. Check if the object is a universal IDamagable contract
-            IDamagable target = hitObject.GetComponent<IDamagable>();            
+            // 3. Check if the object is a universal IDamageable contract
+            IDamageable target = hitObject.GetComponent<IDamageable>();            
             if (target != null)
             {
                 // 4. Deal damage to it!
-                target.TakeDamage(damage); // Hurt the wall, door, or enemy!
+                DamageInfo info = new DamageInfo(
+                    (int)damage,
+                    DamageType.Explosive,
+                    gameObject,
+                    null,
+                    transform.position,
+                    Vector3.zero,
+                    Faction.Neutral
+                );
+                target.TakeDamage(info); // Hurt the wall, door, or enemy!
             }
             
         }

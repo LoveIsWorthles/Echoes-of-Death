@@ -1,77 +1,99 @@
+using System;
 using UnityEngine;
 
-// 1. Add the IDamageable here
-public class Health : MonoBehaviour, IDamagable 
+[DisallowMultipleComponent]
+public class Health : MonoBehaviour, IDamageable
 {
+    [Min(1)]
     public int maxHealth = 1;
-    public int currentHealth;
-    private bool isDead = false;
 
-    private void Start()
+    [Min(1)]
+    public int currentHealth = 1;
+
+    public event Action<DamageInfo> DamageTaken;
+    public event Action<DamageInfo> Death;
+    public event Action<int, int> HealthChanged;
+
+    private bool isDead;
+
+    private void Awake()
     {
-        currentHealth = maxHealth;
+        NormalizeHealth();
     }
 
-    // 2. Added this NEW method required by the IDamageable interface
-    public void TakeDamage(float damageAmount)
+    private void OnValidate()
     {
-        
-        TakeDamage(Mathf.RoundToInt(damageAmount));
+        NormalizeHealth();
     }
 
-    // 3. Keep your existing logic exactly the same for the rest
-    public void TakeDamage(int damage)
+    public void TakeDamage(DamageInfo damageInfo)
     {
-        if (isDead) return;
+        if (isDead || damageInfo.Amount <= 0)
+        {
+            return;
+        }
 
-        currentHealth -= damage;
-        currentHealth = Mathf.Max(0, currentHealth);
+        if (IsDamageBlocked(damageInfo))
+        {
+            return;
+        }
+
+        currentHealth = Mathf.Max(0, currentHealth - damageInfo.Amount);
+        DamageTaken?.Invoke(damageInfo);
+        HealthChanged?.Invoke(currentHealth, maxHealth);
 
         if (currentHealth <= 0)
         {
-            Die();
+            Die(damageInfo);
         }
     }
 
-    private void Die()
+    public void TakeDamage(float damageAmount)
     {
-        if (isDead) return;
-        isDead = true;
-
-        Debug.Log(gameObject.name + " died.");
-        if (gameObject.CompareTag("Player"))
-        {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.LoseReincarnation();
-            }
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        TakeDamage(DamageInfo.FromAmount(Mathf.RoundToInt(damageAmount)));
     }
 
     public void ResetHealth()
     {
-        currentHealth = maxHealth;
         isDead = false;
+        currentHealth = maxHealth;
+        HealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
-    private void OnEnable()
-    {
-        GameManager.OnReincarnationLost += ResetHealth;
-    }
-
-    private void OnDisable()
-    {
-        GameManager.OnReincarnationLost -= ResetHealth;
-    }
-
-    // Context menu for testing
     [ContextMenu("Kill")]
     public void Kill()
     {
-        TakeDamage(maxHealth);
+        TakeDamage(DamageInfo.FromAmount(currentHealth));
+    }
+
+    private bool IsDamageBlocked(DamageInfo damageInfo)
+    {
+        MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+        foreach (MonoBehaviour behaviour in behaviours)
+        {
+            if (behaviour is IDamageBlocker damageBlocker && damageBlocker.BlocksDamage(damageInfo))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void Die(DamageInfo damageInfo)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        isDead = true;
+        Death?.Invoke(damageInfo);
+    }
+
+    private void NormalizeHealth()
+    {
+        maxHealth = Mathf.Max(1, maxHealth);
+        currentHealth = Mathf.Clamp(currentHealth, 1, maxHealth);
     }
 }
