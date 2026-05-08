@@ -1,36 +1,16 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Collider))]
-public class GrenadePickup : MonoBehaviour
+public class GrenadePickup : Pickup
 {
     [SerializeField]
     private GrenadeDefinition grenade;
 
-    [SerializeField]
-    [Min(1)]
+    [SerializeField, Min(1)]
     private int amount = 1;
 
-    private void Reset()
+    protected override bool TryPickup(Collider other)
     {
-        ConfigureTrigger();
-    }
-
-    private void OnValidate()
-    {
-        ConfigureTrigger();
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (TryPickup(other))
-        {
-            Destroy(gameObject);
-        }
-    }
-
-    private bool TryPickup(Collider other)
-    {
-        if (grenade == null || amount <= 0)
+        if (grenade == null)
         {
             return false;
         }
@@ -43,14 +23,5 @@ public class GrenadePickup : MonoBehaviour
 
         grenadeSlots.AddGrenades(grenade, amount);
         return true;
-    }
-
-    private void ConfigureTrigger()
-    {
-        Collider triggerCollider = GetComponent<Collider>();
-        if (triggerCollider != null)
-        {
-            triggerCollider.isTrigger = true;
-        }
     }
 }

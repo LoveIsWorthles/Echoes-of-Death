@@ -1,30 +1,11 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Collider))]
-public class WeaponPickup : MonoBehaviour
+public class WeaponPickup : Pickup
 {
     [SerializeField]
     private WeaponDefinition weapon;
 
-    private void Reset()
-    {
-        ConfigureTrigger();
-    }
-
-    private void OnValidate()
-    {
-        ConfigureTrigger();
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (TryPickup(other))
-        {
-            Destroy(gameObject);
-        }
-    }
-
-    private bool TryPickup(Collider other)
+    protected override bool TryPickup(Collider other)
     {
         if (weapon == null || weapon.slot != WeaponSlot.Primary)
         {
@@ -38,7 +19,7 @@ public class WeaponPickup : MonoBehaviour
         }
 
         ShieldBlocker shieldBlocker = null;
-        if (IsShieldWeapon(weapon))
+        if (weapon.IsShield)
         {
             shieldBlocker = other.GetComponentInParent<ShieldBlocker>();
             if (shieldBlocker == null)
@@ -58,19 +39,5 @@ public class WeaponPickup : MonoBehaviour
         }
 
         return true;
-    }
-
-    private static bool IsShieldWeapon(WeaponDefinition definition)
-    {
-        return definition.kind == WeaponKind.Defensive || definition.isDefensiveOnly;
-    }
-
-    private void ConfigureTrigger()
-    {
-        Collider triggerCollider = GetComponent<Collider>();
-        if (triggerCollider != null)
-        {
-            triggerCollider.isTrigger = true;
-        }
     }
 }

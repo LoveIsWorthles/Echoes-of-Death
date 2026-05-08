@@ -1,6 +1,5 @@
+using System;
 using UnityEngine;
-
-using UnityEngine.Events;
 
 public class LoadoutController : MonoBehaviour
 {
@@ -18,7 +17,11 @@ public class LoadoutController : MonoBehaviour
     private WeaponDefinition primaryWeapon;
     private WeaponDefinition secondaryWeapon;
 
-    public UnityEvent<WeaponDefinition> OnWeaponChanged = new UnityEvent<WeaponDefinition>();
+    public event Action<WeaponDefinition> WeaponChanged;
+
+    public WeaponDefinition PrimaryWeapon => primaryWeapon;
+    public WeaponDefinition SecondaryWeapon => secondaryWeapon;
+    public WeaponSlot ActiveSlot => activeSlot;
 
     private void Awake()
     {
@@ -37,15 +40,13 @@ public class LoadoutController : MonoBehaviour
     {
         if (loadoutDefinition == null)
         {
-            Debug.LogWarning($"[LoadoutController] No LoadoutDefinition assigned on {gameObject.name}");
+            Debug.LogWarning($"[LoadoutController] No LoadoutDefinition assigned on {gameObject.name}", this);
             return;
         }
 
-        // Set up starting weapons
         primaryWeapon = loadoutDefinition.StartingPrimary;
         secondaryWeapon = loadoutDefinition.StartingSecondary;
 
-        // Determine starting active slot
         if (loadoutDefinition.StartWithSecondaryActive || primaryWeapon == null)
         {
             activeSlot = WeaponSlot.Secondary;
@@ -55,21 +56,13 @@ public class LoadoutController : MonoBehaviour
             activeSlot = WeaponSlot.Primary;
         }
 
-        // Equip the starting weapon
         UpdateWeaponController();
     }
 
     public bool EquipPrimary(WeaponDefinition weapon, bool makeActive = true)
     {
-        if (weapon == null)
+        if (!ValidateForSlot(weapon, WeaponSlot.Primary))
         {
-            Debug.LogWarning($"[LoadoutController] Cannot equip null primary weapon on {gameObject.name}");
-            return false;
-        }
-
-        if (weapon.slot != WeaponSlot.Primary)
-        {
-            Debug.LogWarning($"[LoadoutController] Weapon '{weapon.displayName}' is not a Primary weapon (slot: {weapon.slot})");
             return false;
         }
 
@@ -86,15 +79,8 @@ public class LoadoutController : MonoBehaviour
 
     public bool EquipSecondary(WeaponDefinition weapon, bool makeActive = false)
     {
-        if (weapon == null)
+        if (!ValidateForSlot(weapon, WeaponSlot.Secondary))
         {
-            Debug.LogWarning($"[LoadoutController] Cannot equip null secondary weapon on {gameObject.name}");
-            return false;
-        }
-
-        if (weapon.slot != WeaponSlot.Secondary)
-        {
-            Debug.LogWarning($"[LoadoutController] Weapon '{weapon.displayName}' is not a Secondary weapon (slot: {weapon.slot})");
             return false;
         }
 
@@ -111,11 +97,9 @@ public class LoadoutController : MonoBehaviour
 
     public bool SetActiveSlot(WeaponSlot slot)
     {
-        // Validate the slot has a weapon
-        WeaponDefinition targetWeapon = GetWeaponAtSlot(slot);
-        if (targetWeapon == null)
+        if (GetWeaponAtSlot(slot) == null)
         {
-            Debug.LogWarning($"[LoadoutController] Cannot switch to {slot} slot - no weapon available");
+            Debug.LogWarning($"[LoadoutController] Cannot switch to {slot} slot - no weapon available", this);
             return false;
         }
 
@@ -127,6 +111,23 @@ public class LoadoutController : MonoBehaviour
     public WeaponDefinition GetActiveWeapon()
     {
         return GetWeaponAtSlot(activeSlot);
+    }
+
+    private bool ValidateForSlot(WeaponDefinition weapon, WeaponSlot expectedSlot)
+    {
+        if (weapon == null)
+        {
+            Debug.LogWarning($"[LoadoutController] Cannot equip null {expectedSlot} weapon on {gameObject.name}", this);
+            return false;
+        }
+
+        if (weapon.slot != expectedSlot)
+        {
+            Debug.LogWarning($"[LoadoutController] Weapon '{weapon.displayName}' is not a {expectedSlot} weapon (slot: {weapon.slot})", this);
+            return false;
+        }
+
+        return true;
     }
 
     private WeaponDefinition GetWeaponAtSlot(WeaponSlot slot)
@@ -151,11 +152,6 @@ public class LoadoutController : MonoBehaviour
             weaponController.SetWeapon(activeWeapon);
         }
 
-        OnWeaponChanged.Invoke(activeWeapon);
+        WeaponChanged?.Invoke(activeWeapon);
     }
-
-    // Getters for debugging/UI
-    public WeaponDefinition GetPrimaryWeapon() => primaryWeapon;
-    public WeaponDefinition GetSecondaryWeapon() => secondaryWeapon;
-    public WeaponSlot GetActiveSlot() => activeSlot;
 }

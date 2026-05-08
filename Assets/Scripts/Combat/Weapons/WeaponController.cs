@@ -44,7 +44,7 @@ public class WeaponController : MonoBehaviour
             return false;
         }
 
-        if (currentWeapon.isDefensiveOnly || currentWeapon.kind == WeaponKind.Defensive || currentWeapon.behavior is ShieldBehavior)
+        if (currentWeapon.IsShield)
         {
             return false;
         }
@@ -76,7 +76,6 @@ public class WeaponController : MonoBehaviour
             firePoint.position,
             fireRotation,
             fireDirection,
-            ~0,
             projectileParent);
 
         currentWeapon.behavior.Fire(currentWeapon, context);

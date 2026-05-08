@@ -14,19 +14,19 @@ public class GrenadeSlotController : MonoBehaviour
     [SerializeField]
     private GrenadeType selectedGrenadeType = GrenadeType.Frag;
 
-    [SerializeField]
+    [SerializeField, Min(0)]
     private int fragCount;
 
-    [SerializeField]
+    [SerializeField, Min(0)]
     private int flashbangCount;
 
-    [Header("Debug")]
+    [Header("Behavior")]
     [SerializeField]
     private bool autoSelectFirstAvailableGrenade = true;
 
-    public event Action<GrenadeType, int> OnGrenadeCountsChanged;
-    public event Action<GrenadeType> OnSelectedGrenadeChanged;
-    public event Action<GrenadeDefinition, GrenadeType, Vector3> OnGrenadeThrown;
+    public event Action<GrenadeType, int> GrenadeCountsChanged;
+    public event Action<GrenadeType> SelectedGrenadeChanged;
+    public event Action<GrenadeDefinition, GrenadeType, Vector3> GrenadeThrown;
 
     public GrenadeType SelectedGrenadeType => selectedGrenadeType;
 
@@ -50,7 +50,7 @@ public class GrenadeSlotController : MonoBehaviour
 
         RaiseCountsChanged(GrenadeType.Frag);
         RaiseCountsChanged(GrenadeType.Flashbang);
-        OnSelectedGrenadeChanged?.Invoke(selectedGrenadeType);
+        SelectedGrenadeChanged?.Invoke(selectedGrenadeType);
     }
 
     public void AddGrenades(GrenadeDefinition definition, int amount)
@@ -84,18 +84,13 @@ public class GrenadeSlotController : MonoBehaviour
     public bool TryThrowSelected(Vector3 targetWorldPosition)
     {
         GrenadeDefinition selectedDefinition = GetSelectedDefinition();
-        if (selectedDefinition == null)
-        {
-            return false;
-        }
-
-        if (GetSelectedCount() <= 0)
+        if (selectedDefinition == null || GetSelectedCount() <= 0)
         {
             return false;
         }
 
         DecreaseSelectedCount();
-        OnGrenadeThrown?.Invoke(selectedDefinition, selectedGrenadeType, targetWorldPosition);
+        GrenadeThrown?.Invoke(selectedDefinition, selectedGrenadeType, targetWorldPosition);
         RaiseCountsChanged(selectedGrenadeType);
         NormalizeSelectedType();
         return true;
@@ -114,7 +109,7 @@ public class GrenadeSlotController : MonoBehaviour
         }
 
         selectedGrenadeType = type;
-        OnSelectedGrenadeChanged?.Invoke(selectedGrenadeType);
+        SelectedGrenadeChanged?.Invoke(selectedGrenadeType);
         return true;
     }
 
@@ -168,7 +163,7 @@ public class GrenadeSlotController : MonoBehaviour
         }
     }
 
-    private int ClampToCarryLimit(GrenadeDefinition definition, int amount)
+    private static int ClampToCarryLimit(GrenadeDefinition definition, int amount)
     {
         if (definition == null)
         {
@@ -188,19 +183,19 @@ public class GrenadeSlotController : MonoBehaviour
         if (GetCount(GrenadeType.Frag) > 0)
         {
             selectedGrenadeType = GrenadeType.Frag;
-            OnSelectedGrenadeChanged?.Invoke(selectedGrenadeType);
+            SelectedGrenadeChanged?.Invoke(selectedGrenadeType);
             return;
         }
 
         if (GetCount(GrenadeType.Flashbang) > 0)
         {
             selectedGrenadeType = GrenadeType.Flashbang;
-            OnSelectedGrenadeChanged?.Invoke(selectedGrenadeType);
+            SelectedGrenadeChanged?.Invoke(selectedGrenadeType);
         }
     }
 
     private void RaiseCountsChanged(GrenadeType type)
     {
-        OnGrenadeCountsChanged?.Invoke(type, GetCount(type));
+        GrenadeCountsChanged?.Invoke(type, GetCount(type));
     }
 }

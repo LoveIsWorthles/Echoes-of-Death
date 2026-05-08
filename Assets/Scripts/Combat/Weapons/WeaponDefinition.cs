@@ -5,14 +5,12 @@ public class WeaponDefinition : ScriptableObject
 {
     [Header("Identity")]
     public string displayName;
-    public string weaponId;
     public WeaponSlot slot = WeaponSlot.Primary;
     public WeaponKind kind = WeaponKind.Projectile;
     public Sprite icon;
 
     [Header("Behavior")]
     public WeaponBehavior behavior;
-    public bool isDefensiveOnly;
 
     [Header("Projectile")]
     public GameObject projectilePrefab;
@@ -36,4 +34,6 @@ public class WeaponDefinition : ScriptableObject
     [Header("FX")]
     public AudioClip fireSound;
     public GameObject muzzleFlashPrefab;
+
+    public bool IsShield => kind == WeaponKind.Defensive;
 }

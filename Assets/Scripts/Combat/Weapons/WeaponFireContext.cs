@@ -9,7 +9,6 @@ public struct WeaponFireContext
     public Vector3 FirePoint;
     public Quaternion FireRotation;
     public Vector3 Direction;
-    public LayerMask HitMask;
     public Transform ProjectileParent;
 
     public WeaponFireContext(
@@ -19,7 +18,6 @@ public struct WeaponFireContext
         Vector3 firePoint,
         Quaternion fireRotation,
         Vector3 direction,
-        LayerMask hitMask,
         Transform projectileParent)
     {
         Owner = owner;
@@ -28,7 +26,6 @@ public struct WeaponFireContext
         FirePoint = firePoint;
         FireRotation = fireRotation;
         Direction = direction;
-        HitMask = hitMask;
         ProjectileParent = projectileParent;
     }
 

@@ -13,8 +13,8 @@ public class LoadoutDefinition : ScriptableObject
     [SerializeField]
     private bool startWithSecondaryActive = true;
 
-    [Header("Debug")]
-    [SerializeField]
+    [Header("Notes")]
+    [SerializeField, TextArea]
     private string notes;
 
     public WeaponDefinition StartingPrimary => startingPrimary;

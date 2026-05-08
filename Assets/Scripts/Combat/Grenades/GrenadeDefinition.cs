@@ -5,7 +5,6 @@ public class GrenadeDefinition : ScriptableObject
 {
     [Header("Identity")]
     public string displayName;
-    public string grenadeId;
     public GrenadeType grenadeType = GrenadeType.Frag;
     public Sprite icon;
 

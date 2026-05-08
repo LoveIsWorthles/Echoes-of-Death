@@ -4,11 +4,11 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class Health : MonoBehaviour, IDamageable
 {
-    [Min(1)]
-    public int maxHealth = 1;
+    [SerializeField, Min(1)]
+    private int maxHealth = 1;
 
-    [Min(1)]
-    public int currentHealth = 1;
+    [SerializeField, Min(0)]
+    private int currentHealth = 1;
 
     public event Action<DamageInfo> DamageTaken;
     public event Action<DamageInfo> Death;
@@ -16,9 +16,18 @@ public class Health : MonoBehaviour, IDamageable
 
     private bool isDead;
 
+    public int MaxHealth => maxHealth;
+    public int CurrentHealth => currentHealth;
+    public bool IsDead => isDead;
+
     private void Awake()
     {
         NormalizeHealth();
+    }
+
+    private void Start()
+    {
+        HealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
     private void OnValidate()
@@ -51,6 +60,17 @@ public class Health : MonoBehaviour, IDamageable
     public void TakeDamage(float damageAmount)
     {
         TakeDamage(DamageInfo.FromAmount(Mathf.RoundToInt(damageAmount)));
+    }
+
+    public void Heal(int amount)
+    {
+        if (isDead || amount <= 0)
+        {
+            return;
+        }
+
+        currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+        HealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
     public void ResetHealth()
@@ -94,6 +114,6 @@ public class Health : MonoBehaviour, IDamageable
     private void NormalizeHealth()
     {
         maxHealth = Mathf.Max(1, maxHealth);
-        currentHealth = Mathf.Clamp(currentHealth, 1, maxHealth);
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
     }
 }
