@@ -1,16 +1,16 @@
 using UnityEngine;
 
-public class WallChunk : MonoBehaviour, IDamagable
+public class WallChunk : MonoBehaviour, IDamageable
 {
     [Header("Chunk Stats")]
-    public float health = 50f;
+    public int health = 50;
 
     // This function will be called by the grenade
-    public void TakeDamage(float damageAmount)
+    public void TakeDamage(DamageInfo damageInfo)
     {
-        health -= damageAmount;
+        health -= damageInfo.Amount;
         
-        if (health <= 0f)
+        if (health <= 0)
         {
             // Optional: You could instantiate a tiny particle dust cloud here later!
             Destroy(gameObject);

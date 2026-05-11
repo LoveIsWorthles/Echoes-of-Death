@@ -6,14 +6,26 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    public enum DifficultyLevel { Easy, Medium, Hard }
+
+    [Header("Difficulty")]
+    public DifficultyLevel difficulty = DifficultyLevel.Medium;
+    [Min(1)] public int easyLives = 7;
+    [Min(1)] public int mediumLives = 5;
+    [Min(1)] public int hardLives = 3;
+
     [Header("Game State")]
     public int reincarnations = 5;
     public string currentObjective = "Survive and reach the goal";
     public bool isGameOver = false;
+    public bool isPaused { get; private set; } = false;
     public Transform spawnPoint;
 
     public static event Action OnGameStateChanged;
     public static event Action OnReincarnationLost;
+    public static event Action<bool> OnPauseStateChanged;
+
+    private Health playerHealth;
 
     private void Awake()
     {
@@ -21,6 +33,7 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
         else
         {
@@ -28,9 +41,74 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        SubscribeToPlayerHealth();
+        // Ensure time is running at start
+        Time.timeScale = 1f;
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        if (playerHealth != null) playerHealth.Death -= OnPlayerDeath;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        SubscribeToPlayerHealth();
+        
+        // Reset pause on scene load
+        if (isPaused) TogglePause();
+
+        // Re-find spawn point in the new scene to fix restart/loading issues
+        GameObject sp = GameObject.Find("spawnPoint");
+        if (sp != null)
+        {
+            spawnPoint = sp.transform;
+        }
+    }
+
+    public void TogglePause()
+    {
+        if (isGameOver) return;
+
+        isPaused = !isPaused;
+        Time.timeScale = isPaused ? 0f : 1f;
+
+        // Handle cursor
+        Cursor.visible = isPaused;
+        Cursor.lockState = isPaused ? CursorLockMode.None : CursorLockMode.Locked;
+
+        OnPauseStateChanged?.Invoke(isPaused);
+    }
+
+    private void SubscribeToPlayerHealth()
+    {
+        if (playerHealth != null) playerHealth.Death -= OnPlayerDeath;
+
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player == null) return;
+
+        playerHealth = player.GetComponent<Health>();
+        if (playerHealth != null) playerHealth.Death += OnPlayerDeath;
+    }
+
+    private void OnPlayerDeath(DamageInfo _)
+    {
+        LoseReincarnation();
+    }
+
     public void StartGame()
     {
-        reincarnations = 5;
+        // Set lives based on selected difficulty
+        switch (difficulty)
+        {
+            case DifficultyLevel.Easy: reincarnations = easyLives; break;
+            case DifficultyLevel.Medium: reincarnations = mediumLives; break;
+            case DifficultyLevel.Hard: reincarnations = hardLives; break;
+        }
+
         isGameOver = false;
         SceneManager.LoadScene("SampleScene");
     }
@@ -74,12 +152,8 @@ public class GameManager : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
-        // Ensure health is reset (Health also listens to OnReincarnationLost)
-        Health playerHealth = player.GetComponent<Health>();
-        if (playerHealth != null)
-        {
-            playerHealth.ResetHealth();
-        }
+        Health health = player.GetComponent<Health>();
+        if (health != null) health.ResetHealth();
     }
 
     private void GameOver()
