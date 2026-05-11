@@ -7,9 +7,20 @@ public class UIManager : MonoBehaviour
     public Text reincarnationsText;
     public Text objectiveText;
 
+    [Header("Combat HUD")]
+    [SerializeField] private Text healthText;
+    [SerializeField] private Text shieldChargesText;
+    [SerializeField] private Text grenadeCountText;
+    [SerializeField] private Text activeWeaponText;
+
     [Header("Game Over Screen")]
     public GameObject gameOverPanel;
     public Button returnToMenuButton;
+
+    private Health playerHealth;
+    private ShieldBlocker playerShield;
+    private GrenadeSlotController playerGrenades;
+    private LoadoutController playerLoadout;
 
     private void Start()
     {
@@ -19,6 +30,9 @@ public class UIManager : MonoBehaviour
             returnToMenuButton.onClick.AddListener(OnReturnToMenuClicked);
         }
 
+        ResolvePlayerRefs();
+        SubscribePlayerEvents();
+        PrimeCombatHUD();
         UpdateHUD();
     }
 
@@ -30,6 +44,65 @@ public class UIManager : MonoBehaviour
     private void OnDisable()
     {
         GameManager.OnGameStateChanged -= UpdateHUD;
+        UnsubscribePlayerEvents();
+    }
+
+    private void ResolvePlayerRefs()
+    {
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player == null) return;
+
+        playerHealth = player.GetComponent<Health>();
+        playerShield = player.GetComponent<ShieldBlocker>();
+        playerGrenades = player.GetComponent<GrenadeSlotController>();
+        playerLoadout = player.GetComponent<LoadoutController>();
+    }
+
+    private void SubscribePlayerEvents()
+    {
+        if (playerHealth != null) playerHealth.HealthChanged += OnHealthChanged;
+        if (playerShield != null) playerShield.ShieldChargesChanged += OnShieldChargesChanged;
+        if (playerGrenades != null) playerGrenades.GrenadeCountsChanged += OnGrenadeCountsChanged;
+        if (playerLoadout != null) playerLoadout.WeaponChanged += OnWeaponChanged;
+    }
+
+    private void UnsubscribePlayerEvents()
+    {
+        if (playerHealth != null) playerHealth.HealthChanged -= OnHealthChanged;
+        if (playerShield != null) playerShield.ShieldChargesChanged -= OnShieldChargesChanged;
+        if (playerGrenades != null) playerGrenades.GrenadeCountsChanged -= OnGrenadeCountsChanged;
+        if (playerLoadout != null) playerLoadout.WeaponChanged -= OnWeaponChanged;
+    }
+
+    private void PrimeCombatHUD()
+    {
+        if (playerHealth != null) OnHealthChanged(playerHealth.CurrentHealth, playerHealth.MaxHealth);
+        if (playerShield != null) OnShieldChargesChanged(playerShield.CurrentCharges, playerShield.MaxCharges);
+        if (playerGrenades != null) OnGrenadeCountsChanged(playerGrenades.SelectedGrenadeType, playerGrenades.GetCount(playerGrenades.SelectedGrenadeType));
+        if (playerLoadout != null) OnWeaponChanged(playerLoadout.GetActiveWeapon());
+    }
+
+    private void OnHealthChanged(int current, int max)
+    {
+        if (healthText != null) healthText.text = $"HP: {current} / {max}";
+    }
+
+    private void OnShieldChargesChanged(int current, int max)
+    {
+        if (shieldChargesText != null) shieldChargesText.text = $"SHIELD: {current} / {max}";
+    }
+
+    private void OnGrenadeCountsChanged(GrenadeType type, int count)
+    {
+        if (grenadeCountText == null || playerGrenades == null) return;
+        GrenadeType selected = playerGrenades.SelectedGrenadeType;
+        grenadeCountText.text = $"{selected.ToString().ToUpper()}: {playerGrenades.GetCount(selected)}";
+    }
+
+    private void OnWeaponChanged(WeaponDefinition weapon)
+    {
+        if (activeWeaponText == null) return;
+        activeWeaponText.text = weapon != null ? $"WEAPON: {weapon.displayName}" : "WEAPON: -";
     }
 
     private void UpdateHUD()

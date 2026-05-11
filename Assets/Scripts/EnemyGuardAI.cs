@@ -7,8 +7,6 @@ public class EnemyGuardAI : MonoBehaviour
 {
     [Header("References")]
     public Transform player;
-    public GameObject bulletPrefab;
-    public Transform firePoint;
 
     [Header("Patrol / Guard")]
     public List<Transform> patrolPoints = new List<Transform>();
@@ -22,13 +20,11 @@ public class EnemyGuardAI : MonoBehaviour
     public float fieldOfView = 90f;
     public LayerMask wallLayer;
 
-    [Header("Shooting")]
-    public float bulletSpeed = 15f;
-    public float fireRate = 1.5f;
+    [Header("Combat")]
+    [SerializeField] private WeaponController weaponController;
 
     private NavMeshAgent agent;
     private int patrolIndex = 0;
-    private float nextFireTime;
     private bool isWaiting = false;
 
     enum EnemyState
@@ -44,6 +40,11 @@ public class EnemyGuardAI : MonoBehaviour
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+
+        if (weaponController == null)
+        {
+            weaponController = GetComponent<WeaponController>();
+        }
 
         if (player == null)
         {
@@ -163,18 +164,11 @@ public class EnemyGuardAI : MonoBehaviour
 
         LookAtPlayer();
 
-        if (Time.time >= nextFireTime)
-        {
-            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+        if (weaponController == null) return;
 
-            Rigidbody rb = bullet.GetComponent<Rigidbody>();
-
-            Vector3 direction = (player.position - firePoint.position).normalized;
-
-            rb.linearVelocity = direction * bulletSpeed;
-
-            nextFireTime = Time.time + fireRate;
-        }
+        Vector3 direction = player.position - transform.position;
+        direction.y = 0f;
+        weaponController.TryFire(direction);
     }
 
     bool CanSeePlayer()
