@@ -22,6 +22,8 @@ public class PlayerController : MonoBehaviour
     private InputAction fireAction;
     private InputAction switchPrimaryAction;
     private InputAction switchSecondaryAction;
+    private InputAction cycleWeaponAction;
+    private InputAction cycleGrenadeAction;
     private InputAction throwGrenadeAction;
 
     void Start()
@@ -39,10 +41,14 @@ public class PlayerController : MonoBehaviour
         fireAction = InputSystem.actions.FindAction("Fire");
         switchPrimaryAction = InputSystem.actions.FindAction("SwitchPrimary");
         switchSecondaryAction = InputSystem.actions.FindAction("SwitchSecondary");
+        cycleWeaponAction = InputSystem.actions.FindAction("CycleWeapon");
+        cycleGrenadeAction = InputSystem.actions.FindAction("CycleGrenade");
         throwGrenadeAction = InputSystem.actions.FindAction("ThrowGrenade");
 
         if (switchPrimaryAction != null) switchPrimaryAction.performed += OnSwitchPrimary;
         if (switchSecondaryAction != null) switchSecondaryAction.performed += OnSwitchSecondary;
+        if (cycleWeaponAction != null) cycleWeaponAction.performed += OnCycleWeapon;
+        if (cycleGrenadeAction != null) cycleGrenadeAction.performed += OnCycleGrenade;
         if (throwGrenadeAction != null) throwGrenadeAction.performed += OnThrowGrenade;
     }
 
@@ -50,6 +56,8 @@ public class PlayerController : MonoBehaviour
     {
         if (switchPrimaryAction != null) switchPrimaryAction.performed -= OnSwitchPrimary;
         if (switchSecondaryAction != null) switchSecondaryAction.performed -= OnSwitchSecondary;
+        if (cycleWeaponAction != null) cycleWeaponAction.performed -= OnCycleWeapon;
+        if (cycleGrenadeAction != null) cycleGrenadeAction.performed -= OnCycleGrenade;
         if (throwGrenadeAction != null) throwGrenadeAction.performed -= OnThrowGrenade;
     }
 
@@ -100,8 +108,25 @@ public class PlayerController : MonoBehaviour
         if (loadoutController != null) loadoutController.SetActiveSlot(WeaponSlot.Secondary);
     }
 
+    private void OnCycleWeapon(InputAction.CallbackContext context)
+    {
+        if (loadoutController == null) return;
+
+        float scrollValue = context.ReadValue<Vector2>().y;
+        if (Mathf.Abs(scrollValue) < 0.1f) return;
+
+        // Cycle between Primary and Secondary
+        WeaponSlot nextSlot = loadoutController.ActiveSlot == WeaponSlot.Primary ? WeaponSlot.Secondary : WeaponSlot.Primary;
+        loadoutController.SetActiveSlot(nextSlot);
+    }
+
+    private void OnCycleGrenade(InputAction.CallbackContext _)
+    {
+        if (grenadeSlotController != null) grenadeSlotController.CycleGrenadeType();
+    }
+
     private void OnThrowGrenade(InputAction.CallbackContext _)
     {
         if (grenadeSlotController != null) grenadeSlotController.TryThrowSelected(aimWorldPoint);
     }
-}
+    }
