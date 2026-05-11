@@ -1,15 +1,15 @@
 using UnityEngine;
 
-public class BreachableDoor : MonoBehaviour, IDamagable
+public class BreachableDoor : MonoBehaviour, IDamageable
 {
     [Header("Door Stats")]
-    public float health = 100f; // Doors might be tougher than a single wall brick
+    public int health = 100; // Doors might be tougher than a single wall brick
 
-    public void TakeDamage(float damageAmount)
+    public void TakeDamage(DamageInfo damageInfo)
     {
-        health -= damageAmount;
+        health -= damageInfo.Amount;
         
-        if (health <= 0f)
+        if (health <= 0)
         {
             // Note: Later we can spawn a "wood splinters" particle effect here!
             Destroy(gameObject);
