@@ -83,7 +83,10 @@ public class Health : MonoBehaviour, IDamageable
     [ContextMenu("Kill")]
     public void Kill()
     {
-        TakeDamage(DamageInfo.FromAmount(currentHealth));
+        if (isDead) return;
+        currentHealth = 0;
+        HealthChanged?.Invoke(currentHealth, maxHealth);
+        Die(DamageInfo.FromAmount(maxHealth));
     }
 
     private bool IsDamageBlocked(DamageInfo damageInfo)

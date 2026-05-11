@@ -63,6 +63,12 @@ public class EnemyGuardAI : MonoBehaviour
 
     void Update()
     {
+        if (GameManager.Instance != null && GameManager.Instance.isPaused)
+        {
+            if (agent.hasPath) agent.isStopped = true;
+            return;
+        }
+
         if (player == null) return;
 
         bool canSeePlayer = CanSeePlayer();

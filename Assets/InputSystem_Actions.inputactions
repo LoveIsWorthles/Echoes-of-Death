@@ -115,6 +115,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "e30f1d6b-0b1a-4d0a-9e1b-3c0d2e1f0a1b",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Point",
                     "type": "Value",
                     "id": "53b8fb54-db75-4b29-8172-c46cc7343859",
@@ -553,9 +562,20 @@
                     "action": "Point",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d4a5b6c7-d8e9-f0a1-b2c3-d4e5f6a7b8c9",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
-            ]
-        },
+                ]
+                },
         {
             "name": "UI",
             "id": "272f6d14-89ba-496f-b7ff-215263d3219f",
