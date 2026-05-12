@@ -44,8 +44,9 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         SubscribeToPlayerHealth();
-        // Ensure time is running at start
         Time.timeScale = 1f;
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Confined;
     }
 
     private void OnDestroy()
@@ -78,7 +79,7 @@ public class GameManager : MonoBehaviour
 
         // Handle cursor
         Cursor.visible = isPaused;
-        Cursor.lockState = isPaused ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.lockState = isPaused ? CursorLockMode.None : CursorLockMode.Confined;
 
         OnPauseStateChanged?.Invoke(isPaused);
     }
