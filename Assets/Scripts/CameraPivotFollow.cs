@@ -25,4 +25,12 @@ public class CameraPivotFollow : MonoBehaviour
         // Apply the new smoothly calculated position to the Camera Pivot
         transform.position = smoothedPosition;
     }
+    
+    public void SnapToTarget()
+    {
+        if (playerTarget != null)
+        {
+            transform.position = playerTarget.position;
+        }
+    }
 }

@@ -16,10 +16,17 @@ public class GameManager : MonoBehaviour
 
     [Header("Game State")]
     public int reincarnations = 5;
-    public string currentObjective = "Survive and reach the goal";
+    public string currentObjective = "Rescue all hostages";
     public bool isGameOver = false;
+    public bool isWin = false;
     public bool isPaused { get; private set; } = false;
     public Transform spawnPoint;
+
+    [Header("Objectives")]
+    public int totalHostages = 0;
+    public int savedHostages = 0;
+    public int totalEnemies = 0;
+    public int remainingEnemies = 0;
 
     public static event Action OnGameStateChanged;
     public static event Action OnReincarnationLost;
@@ -68,6 +75,76 @@ public class GameManager : MonoBehaviour
         {
             spawnPoint = sp.transform;
         }
+
+        // Initialize Hostages
+        FloorManager floorManager = GetComponent<FloorManager>();
+        if (floorManager != null)
+        {
+            floorManager.RefreshSceneReferences();
+            floorManager.GoToFloor1();
+        }
+
+        InitializeObjectives();
+    }
+
+    private void InitializeObjectives()
+    {
+        savedHostages = 0;
+        isWin = false;
+        
+        // Find all hostages in the scene (including inactive ones on other floors)
+        Hostage[] hostages = UnityEngine.Object.FindObjectsByType<Hostage>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        totalHostages = hostages.Length;
+
+        // Find all enemies in the scene (including inactive ones)
+        EnemyDeathHandler[] enemies = UnityEngine.Object.FindObjectsByType<EnemyDeathHandler>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        totalEnemies = enemies.Length;
+        remainingEnemies = totalEnemies;
+
+        UpdateObjectiveText();
+    }
+
+    public void HostageSaved()
+    {
+        if (isGameOver || isWin) return;
+
+        savedHostages++;
+        UpdateObjectiveText();
+        CheckWinCondition();
+    }
+
+    public void EnemyKilled()
+    {
+        if (isGameOver || isWin) return;
+
+        remainingEnemies--;
+        UpdateObjectiveText();
+        CheckWinCondition();
+    }
+
+    private void CheckWinCondition()
+    {
+        if (savedHostages >= totalHostages && remainingEnemies <= 0 && (totalHostages > 0 || totalEnemies > 0))
+        {
+            Win();
+        }
+    }
+
+    private void UpdateObjectiveText()
+    {
+        currentObjective = $"RESCUE HOSTAGES: {savedHostages}/{totalHostages}\nENEMIES REMAINING: {remainingEnemies}";
+        OnGameStateChanged?.Invoke();
+    }
+
+    private void Win()
+    {
+        isWin = true;
+        isGameOver = true; // Use game over logic for pausing/locking
+        Time.timeScale = 0f;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+        OnGameStateChanged?.Invoke();
+        Debug.Log("Mission Accomplished: All hostages rescued.");
     }
 
     public void TogglePause()
@@ -143,6 +220,20 @@ public class GameManager : MonoBehaviour
         {
             player.transform.position = spawnPoint.position;
             player.transform.rotation = spawnPoint.rotation;
+        }
+
+        // Reset camera position to avoid slow slide from previous death location
+        CameraPivotFollow camFollow = UnityEngine.Object.FindFirstObjectByType<CameraPivotFollow>();
+        if (camFollow != null)
+        {
+            camFollow.SnapToTarget();
+        }
+
+        // Reset floor view to Floor 1
+        FloorManager floorManager = GetComponent<FloorManager>();
+        if (floorManager != null)
+        {
+            floorManager.GoToFloor1();
         }
 
         // Reset physics (if any)

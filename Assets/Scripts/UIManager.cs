@@ -50,8 +50,13 @@ public class UIManager : MonoBehaviour
 
     [Header("Game Over Screen")]
     public GameObject gameOverPanel;
+    public GameObject winPanel;
     public Button restartButton;
     public Button returnToMenuButton;
+
+    [Header("Win Screen")]
+    public Button winRestartButton;
+    public Button winMenuButton;
 
     [Header("Pause Screen")]
     public GameObject pausePanel;
@@ -68,10 +73,17 @@ public class UIManager : MonoBehaviour
     private void Start()
     {
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (winPanel != null) winPanel.SetActive(false);
         if (pausePanel != null) pausePanel.SetActive(false);
 
         if (returnToMenuButton != null) returnToMenuButton.onClick.AddListener(OnReturnToMenuClicked);
         if (restartButton != null) restartButton.onClick.AddListener(OnRestartClicked);
+
+        if (winRestartButton != null) winRestartButton.onClick.AddListener(OnRestartClicked);
+        if (winMenuButton != null) winMenuButton.onClick.AddListener(OnReturnToMenuClicked);
+
+        if (winRestartButton != null) winRestartButton.onClick.AddListener(OnRestartClicked);
+        if (winMenuButton != null) winMenuButton.onClick.AddListener(OnReturnToMenuClicked);
 
         if (resumeButton != null) resumeButton.onClick.AddListener(OnResumeClicked);
         if (pauseRestartButton != null) pauseRestartButton.onClick.AddListener(OnRestartClicked);
@@ -171,7 +183,7 @@ public class UIManager : MonoBehaviour
         RefreshEchoes();
         RefreshObjective();
         RefreshLoadout();
-        UpdateGameOverPanel();
+        UpdateStatePanels();
     }
 
     private void RefreshEchoes()
@@ -381,13 +393,18 @@ public class UIManager : MonoBehaviour
         RefreshLoadout();
     }
 
-    private void UpdateGameOverPanel()
+    private void UpdateStatePanels()
     {
-        if (GameManager.Instance == null || gameOverPanel == null) return;
+        if (GameManager.Instance == null) return;
 
-        if (GameManager.Instance.isGameOver)
+        if (gameOverPanel != null)
         {
-            gameOverPanel.SetActive(true);
+            gameOverPanel.SetActive(GameManager.Instance.isGameOver && !GameManager.Instance.isWin);
+        }
+
+        if (winPanel != null)
+        {
+            winPanel.SetActive(GameManager.Instance.isWin);
         }
     }
 

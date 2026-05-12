@@ -13,7 +13,20 @@ public class FloorManager : MonoBehaviour
 
     void Awake()
     {
+        RefreshSceneReferences();
         GoToFloor1();
+    }
+
+    public void RefreshSceneReferences()
+    {
+        // If references are lost (e.g. after scene reload in a persistent manager), try to find them by name
+        if (floor1Group == null) floor1Group = GameObject.Find("Floor1_Group");
+        if (floor2Group == null) floor2Group = GameObject.Find("Floor2_Group");
+        if (fogPlane == null)
+        {
+            GameObject fog = GameObject.Find("Fog_Plane"); // Guessing name based on context
+            if (fog != null) fogPlane = fog.transform;
+        }
     }
 
     public void GoToFloor2()
