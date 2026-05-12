@@ -18,4 +18,8 @@ public class GrenadeDefinition : ScriptableObject
     [Min(0f)] public float radius = 2.5f;
     [Min(0)] public int damage = 0;
     [Min(0)] public int maxCarryCount = 3;
+
+    [Header("Flashbang")]
+    [SerializeField, Min(0f)] private float stunDuration = 3f;
+    public float StunDuration => stunDuration;
 }
