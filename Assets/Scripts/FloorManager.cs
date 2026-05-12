@@ -19,31 +19,44 @@ public class FloorManager : MonoBehaviour
 
     public void RefreshSceneReferences()
     {
-        // If references are lost (e.g. after scene reload in a persistent manager), try to find them by name
-        if (floor1Group == null) floor1Group = GameObject.Find("Floor1_Group");
-        if (floor2Group == null) floor2Group = GameObject.Find("Floor2_Group");
+        // GameObject.Find skips inactive objects, and Floor2_Group typically starts inactive,
+        // so use a scene-wide search that includes inactive GameObjects.
+        if (floor1Group == null) floor1Group = FindInLoadedScenesByName("Floor1_Group");
+        if (floor2Group == null) floor2Group = FindInLoadedScenesByName("Floor2_Group");
         if (fogPlane == null)
         {
-            GameObject fog = GameObject.Find("Fog_Plane"); // Guessing name based on context
+            GameObject fog = FindInLoadedScenesByName("Fog_Plane");
             if (fog != null) fogPlane = fog.transform;
         }
     }
 
     public void GoToFloor2()
     {
-        // Show the second floor geometry
-        floor2Group.SetActive(true);
-        
-        // Raise the black fog blanket so it covers the 2nd floor instead of the 1st
-        fogPlane.position = new Vector3(fogPlane.position.x, floor2FogHeight, fogPlane.position.z);
+        if (floor2Group != null) floor2Group.SetActive(true);
+        if (fogPlane != null)
+        {
+            fogPlane.position = new Vector3(fogPlane.position.x, floor2FogHeight, fogPlane.position.z);
+        }
     }
 
     public void GoToFloor1()
     {
-        // Hide the second floor so the top-down camera isn't staring at a roof!
-        floor2Group.SetActive(false);
-        
-        // Lower the black fog blanket back to the 1st floor
-        fogPlane.position = new Vector3(fogPlane.position.x, floor1FogHeight, fogPlane.position.z);
+        if (floor2Group != null) floor2Group.SetActive(false);
+        if (fogPlane != null)
+        {
+            fogPlane.position = new Vector3(fogPlane.position.x, floor1FogHeight, fogPlane.position.z);
+        }
+    }
+
+    private static GameObject FindInLoadedScenesByName(string name)
+    {
+        GameObject[] all = Resources.FindObjectsOfTypeAll<GameObject>();
+        foreach (GameObject go in all)
+        {
+            if (go.name != name) continue;
+            if (!go.scene.IsValid()) continue; // skip prefab assets
+            return go;
+        }
+        return null;
     }
 }

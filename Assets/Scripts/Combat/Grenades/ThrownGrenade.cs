@@ -122,6 +122,16 @@ public class ThrownGrenade : MonoBehaviour
         }
     }
 
+    private static Vector3 SafeClosestPoint(Collider col, Vector3 point)
+    {
+        // Collider.ClosestPoint is only supported on primitive colliders and convex MeshColliders;
+        // calling it on a non-convex MeshCollider logs a warning and returns the input point.
+        // Fall back to the AABB for unsupported colliders.
+        if (col is BoxCollider || col is SphereCollider || col is CapsuleCollider) return col.ClosestPoint(point);
+        if (col is MeshCollider mc && mc.convex) return col.ClosestPoint(point);
+        return col.bounds.ClosestPoint(point);
+    }
+
     private static Vector3 ComputeLaunchVelocity(Vector3 from, Vector3 to, float speed)
     {
         Vector3 delta = to - from;
@@ -247,7 +257,7 @@ public class ThrownGrenade : MonoBehaviour
             if (col == null) continue;
 
             // Strict Cylinder Check: Filter out objects in the box corners that are outside the cylinder radius
-            Vector3 closestPoint = col.ClosestPoint(center);
+            Vector3 closestPoint = SafeClosestPoint(col, center);
             Vector3 toHitXZ = closestPoint - center;
             toHitXZ.y = 0; // Project to XZ plane
             

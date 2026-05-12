@@ -64,10 +64,18 @@ public class GameManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        // Reset transient gameplay state so a game-over/win/pause from the previous scene
+        // doesn't leak forward (Time.timeScale=0 freezes the camera and player on restart).
+        Time.timeScale = 1f;
+        isGameOver = false;
+        isWin = false;
+        isPaused = false;
+
+        bool isMenuScene = scene.name == "MainMenu";
+        Cursor.visible = isMenuScene;
+        Cursor.lockState = isMenuScene ? CursorLockMode.None : CursorLockMode.Confined;
+
         SubscribeToPlayerHealth();
-        
-        // Reset pause on scene load
-        if (isPaused) TogglePause();
 
         // Re-find spawn point in the new scene to fix restart/loading issues
         GameObject sp = GameObject.Find("spawnPoint");
@@ -76,7 +84,6 @@ public class GameManager : MonoBehaviour
             spawnPoint = sp.transform;
         }
 
-        // Initialize Hostages
         FloorManager floorManager = GetComponent<FloorManager>();
         if (floorManager != null)
         {
@@ -251,6 +258,9 @@ public class GameManager : MonoBehaviour
     private void GameOver()
     {
         isGameOver = true;
+        Time.timeScale = 0f;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
         OnGameStateChanged?.Invoke();
         Debug.Log("Game Over: No more echoes.");
     }

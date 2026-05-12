@@ -26,10 +26,11 @@ public class CanvasAimReticle : MonoBehaviour
 
     void Update()
     {
-        // Hide the reticle if the game is paused or the cursor is visible
-        bool isPaused = GameManager.Instance != null && GameManager.Instance.isPaused;
-        
-        if (isPaused)
+        // Hide the reticle whenever the OS cursor is visible (pause / game over / win)
+        bool hideReticle = GameManager.Instance != null
+            && (GameManager.Instance.isPaused || GameManager.Instance.isGameOver);
+
+        if (hideReticle)
         {
             image.enabled = false;
             return;

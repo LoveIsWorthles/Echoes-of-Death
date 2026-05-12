@@ -63,7 +63,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (GameManager.Instance != null && GameManager.Instance.isPaused) return;
+        if (GameManager.Instance != null && (GameManager.Instance.isPaused || GameManager.Instance.isGameOver)) return;
 
         Vector2 moveInput = moveAction.ReadValue<Vector2>();
         movement.x = moveInput.x;
@@ -83,7 +83,7 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (GameManager.Instance != null && GameManager.Instance.isPaused) return;
+        if (GameManager.Instance != null && (GameManager.Instance.isPaused || GameManager.Instance.isGameOver)) return;
 
         rb.MovePosition(rb.position + movement * moveSpeed * Time.fixedDeltaTime);
     }
