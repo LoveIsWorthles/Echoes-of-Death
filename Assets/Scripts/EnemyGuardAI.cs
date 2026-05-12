@@ -26,6 +26,15 @@ public class EnemyGuardAI : MonoBehaviour
     private NavMeshAgent agent;
     private int patrolIndex = 0;
     private bool isWaiting = false;
+    private float stunEndTime;
+
+    public bool IsStunned => Time.time < stunEndTime;
+
+    public void Stun(float duration)
+    {
+        if (duration <= 0f) return;
+        stunEndTime = Mathf.Max(stunEndTime, Time.time + duration);
+    }
 
     enum EnemyState
     {
@@ -70,6 +79,16 @@ public class EnemyGuardAI : MonoBehaviour
         }
 
         if (player == null) return;
+
+        if (IsStunned)
+        {
+            if (agent != null && agent.isOnNavMesh && !agent.isStopped)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+            return;
+        }
 
         bool canSeePlayer = CanSeePlayer();
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
