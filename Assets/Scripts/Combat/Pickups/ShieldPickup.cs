@@ -1,13 +1,13 @@
 using UnityEngine;
 
-public class WeaponPickup : Pickup
+public class ShieldPickup : Pickup
 {
     [SerializeField]
-    private WeaponDefinition weapon;
+    private ShieldDefinition shield;
 
     protected override bool TryPickup(Collider other)
     {
-        if (weapon == null || weapon.slot != WeaponSlot.Primary)
+        if (shield == null)
         {
             return false;
         }
@@ -18,6 +18,11 @@ public class WeaponPickup : Pickup
             return false;
         }
 
-        return loadout.EquipPrimary(weapon, makeActive: true);
+        if (!loadout.HasPrimaryShield)
+        {
+            return loadout.EquipShield(shield);
+        }
+
+        return loadout.RefillShield();
     }
 }

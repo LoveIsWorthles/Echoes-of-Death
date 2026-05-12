@@ -14,10 +14,21 @@ public class ShotgunBehavior : WeaponBehavior
         int count = Mathf.Max(1, weapon.projectileCount);
         float spread = Mathf.Max(0f, weapon.spreadAngle);
 
+        Projectile[] pellets = new Projectile[count];
         for (int i = 0; i < count; i++)
         {
             Vector3 direction = ComputeShotDirection(baseDirection, count, i, spread);
-            SpawnProjectile(weapon, context, direction);
+            pellets[i] = SpawnProjectile(weapon, context, direction);
+        }
+
+        for (int i = 0; i < pellets.Length; i++)
+        {
+            if (pellets[i] == null) continue;
+            for (int j = i + 1; j < pellets.Length; j++)
+            {
+                if (pellets[j] != null)
+                    pellets[i].IgnoreCollisionWith(pellets[j]);
+            }
         }
 
         PlayFireFx(weapon, context);

@@ -291,6 +291,12 @@ public class Projectile : MonoBehaviour
         return other.attachedRigidbody != null ? other.attachedRigidbody.gameObject : other.transform.root.gameObject;
     }
 
+    public void IgnoreCollisionWith(Projectile other)
+    {
+        if (other != null && other.projectileCollider != null)
+            Physics.IgnoreCollision(projectileCollider, other.projectileCollider, true);
+    }
+
     private void IgnoreOwnerColliders()
     {
         if (owner == null)

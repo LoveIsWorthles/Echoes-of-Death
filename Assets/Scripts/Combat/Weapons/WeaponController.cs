@@ -44,11 +44,6 @@ public class WeaponController : MonoBehaviour
             return false;
         }
 
-        if (currentWeapon.IsShield)
-        {
-            return false;
-        }
-
         if (firePoint == null)
         {
             return false;

@@ -140,7 +140,13 @@ public class UIManager : MonoBehaviour
             playerGrenades.GrenadeCountsChanged += OnGrenadeCountsChanged;
             playerGrenades.SelectedGrenadeChanged += OnSelectedGrenadeChanged;
         }
-        if (playerLoadout != null) playerLoadout.WeaponChanged += OnWeaponChanged;
+        if (playerLoadout != null)
+        {
+            playerLoadout.WeaponChanged += OnWeaponChanged;
+            playerLoadout.ShieldEquipped += OnShieldEquipped;
+            playerLoadout.ShieldRemoved += OnShieldRemoved;
+            playerLoadout.ActiveSlotChanged += OnActiveSlotChanged;
+        }
     }
 
     private void UnsubscribePlayerEvents()
@@ -151,7 +157,13 @@ public class UIManager : MonoBehaviour
             playerGrenades.GrenadeCountsChanged -= OnGrenadeCountsChanged;
             playerGrenades.SelectedGrenadeChanged -= OnSelectedGrenadeChanged;
         }
-        if (playerLoadout != null) playerLoadout.WeaponChanged -= OnWeaponChanged;
+        if (playerLoadout != null)
+        {
+            playerLoadout.WeaponChanged -= OnWeaponChanged;
+            playerLoadout.ShieldEquipped -= OnShieldEquipped;
+            playerLoadout.ShieldRemoved -= OnShieldRemoved;
+            playerLoadout.ActiveSlotChanged -= OnActiveSlotChanged;
+        }
     }
 
     private void RefreshAll()
@@ -184,11 +196,63 @@ public class UIManager : MonoBehaviour
     {
         if (playerLoadout == null) return;
 
-        UpdateWeaponSlot(primarySlot, playerLoadout.PrimaryWeapon, playerLoadout.ActiveSlot == WeaponSlot.Primary);
+        UpdatePrimarySlot();
         UpdateWeaponSlot(secondarySlot, playerLoadout.SecondaryWeapon, playerLoadout.ActiveSlot == WeaponSlot.Secondary);
-        
+
         RefreshGrenadeSlot(fragSlot, GrenadeType.Frag);
         RefreshGrenadeSlot(flashbangSlot, GrenadeType.Flashbang);
+    }
+
+    private void UpdatePrimarySlot()
+    {
+        if (primarySlot == null || primarySlot.root == null) return;
+
+        bool isActive = playerLoadout.ActiveSlot == WeaponSlot.Primary;
+        ShieldDefinition shield = playerLoadout.PrimaryShield;
+
+        if (shield != null)
+        {
+            RenderShieldInPrimary(shield, isActive);
+            return;
+        }
+
+        UpdateWeaponSlot(primarySlot, playerLoadout.PrimaryWeapon, isActive);
+    }
+
+    private void RenderShieldInPrimary(ShieldDefinition shield, bool isActive)
+    {
+        bool shouldHighlight = isActive;
+        if (primarySlot.border != null) primarySlot.border.enabled = shouldHighlight;
+        if (primarySlot.canvasGroup != null) primarySlot.canvasGroup.alpha = shouldHighlight ? 1f : 0.6f;
+
+        if (primarySlot.icon != null)
+        {
+            primarySlot.icon.preserveAspect = true;
+            if (shield.icon != null)
+            {
+                primarySlot.icon.sprite = shield.icon;
+                primarySlot.icon.color = Color.white;
+            }
+            else
+            {
+                Debug.LogWarning($"[UIManager] ShieldDefinition '{shield.displayName}' is missing an icon.", shield);
+            }
+        }
+
+        if (primarySlot.label != null)
+        {
+            primarySlot.label.text = shield.displayName.ToUpper();
+            primarySlot.label.color = shouldHighlight ? Color.white : new Color(0.8f, 0.8f, 0.8f);
+        }
+
+        if (primarySlot.shieldChargesText != null)
+        {
+            primarySlot.shieldChargesText.gameObject.SetActive(true);
+            if (playerShield != null)
+            {
+                primarySlot.shieldChargesText.text = $"{playerShield.CurrentCharges}/{playerShield.MaxCharges}";
+            }
+        }
     }
 
     private void UpdateWeaponSlot(WeaponSlotView slotView, WeaponDefinition weapon, bool isActive)
@@ -196,8 +260,7 @@ public class UIManager : MonoBehaviour
         if (slotView == null || slotView.root == null) return;
 
         bool hasWeapon = weapon != null;
-        
-        // Highlight logic
+
         bool shouldHighlight = isActive && hasWeapon;
         if (slotView.border != null) slotView.border.enabled = shouldHighlight;
         if (slotView.canvasGroup != null) slotView.canvasGroup.alpha = shouldHighlight ? 1f : 0.6f;
@@ -221,23 +284,15 @@ public class UIManager : MonoBehaviour
             {
                 slotView.label.text = weapon.displayName.ToUpper();
                 slotView.label.color = shouldHighlight ? Color.white : new Color(0.8f, 0.8f, 0.8f);
-                // slotView.label.textWrappingMode = TextWrappingModes.NoWrap;
             }
 
-            // Shield logic (Primary only in this project's current state, but generic here)
             if (slotView.shieldChargesText != null)
             {
-                bool isShield = weapon.IsShield;
-                slotView.shieldChargesText.gameObject.SetActive(isShield);
-                if (isShield && playerShield != null)
-                {
-                    slotView.shieldChargesText.text = $"{playerShield.CurrentCharges}/{playerShield.MaxCharges}";
-                }
+                slotView.shieldChargesText.gameObject.SetActive(false);
             }
         }
         else
         {
-            // Empty state
             if (slotView.label != null) slotView.label.text = "EMPTY";
             if (slotView.icon != null)
             {
@@ -288,12 +343,25 @@ public class UIManager : MonoBehaviour
 
     private void OnShieldChargesChanged(int current, int max)
     {
-        // Re-update the slot that has the shield
-        if (playerLoadout != null)
+        if (playerLoadout != null && playerLoadout.PrimaryShield != null)
         {
-            if (playerLoadout.PrimaryWeapon != null && playerLoadout.PrimaryWeapon.IsShield)
-                UpdateWeaponSlot(primarySlot, playerLoadout.PrimaryWeapon, playerLoadout.ActiveSlot == WeaponSlot.Primary);
+            UpdatePrimarySlot();
         }
+    }
+
+    private void OnShieldEquipped(ShieldDefinition _)
+    {
+        UpdatePrimarySlot();
+    }
+
+    private void OnShieldRemoved()
+    {
+        UpdatePrimarySlot();
+    }
+
+    private void OnActiveSlotChanged(WeaponSlot _)
+    {
+        RefreshLoadout();
     }
 
     private void OnGrenadeCountsChanged(GrenadeType type, int count)

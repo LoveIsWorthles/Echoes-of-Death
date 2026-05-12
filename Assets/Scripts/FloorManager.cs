@@ -11,9 +11,8 @@ public class FloorManager : MonoBehaviour
     public float floor1FogHeight = 2f;
     public float floor2FogHeight = 6f; // Adjust this based on how tall your 1st floor walls are
 
-    void Start()
+    void Awake()
     {
-        // Ensure we start the game looking at Floor 1
         GoToFloor1();
     }
 

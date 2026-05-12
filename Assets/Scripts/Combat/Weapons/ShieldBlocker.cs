@@ -8,17 +8,7 @@ public class ShieldBlocker : MonoBehaviour, IDamageBlocker
     [SerializeField]
     private LoadoutController loadout;
 
-    [Header("Fallback Config")]
-    [SerializeField, Min(1)]
-    private int fallbackMaxCharges = 5;
-
-    [SerializeField, Range(0f, 360f)]
-    private float fallbackFrontBlockAngle = 120f;
-
-    [SerializeField, Range(0f, 360f)]
-    private float fallbackBackBlockAngle = 60f;
-
-    private WeaponDefinition shieldDefinition;
+    private ShieldDefinition shieldDefinition;
     private int currentCharges;
 
     public event Action<DamageInfo> ShieldBlocked;
@@ -27,10 +17,8 @@ public class ShieldBlocker : MonoBehaviour, IDamageBlocker
 
     public bool HasShield => shieldDefinition != null;
     public int CurrentCharges => currentCharges;
-    public int MaxCharges => shieldDefinition != null ? shieldDefinition.shieldMaxCharges : fallbackMaxCharges;
-
-    private float FrontBlockAngle => shieldDefinition != null ? shieldDefinition.frontBlockAngle : fallbackFrontBlockAngle;
-    private float BackBlockAngle => shieldDefinition != null ? shieldDefinition.backBlockAngle : fallbackBackBlockAngle;
+    public int MaxCharges => shieldDefinition != null ? shieldDefinition.maxCharges : 0;
+    public ShieldDefinition Definition => shieldDefinition;
 
     private void Awake()
     {
@@ -40,9 +28,20 @@ public class ShieldBlocker : MonoBehaviour, IDamageBlocker
         }
     }
 
-    public void ReplaceWithFreshShield(WeaponDefinition definition)
+    public void ReplaceWithFreshShield(ShieldDefinition definition)
     {
         shieldDefinition = definition;
+        currentCharges = MaxCharges;
+        ShieldChargesChanged?.Invoke(currentCharges, MaxCharges);
+    }
+
+    public void RefillCharges()
+    {
+        if (shieldDefinition == null)
+        {
+            return;
+        }
+
         currentCharges = MaxCharges;
         ShieldChargesChanged?.Invoke(currentCharges, MaxCharges);
     }
@@ -61,7 +60,12 @@ public class ShieldBlocker : MonoBehaviour, IDamageBlocker
             return false;
         }
 
-        if (loadout == null || loadout.PrimaryWeapon != shieldDefinition)
+        if (damageInfo.DamageType != DamageType.Bullet)
+        {
+            return false;
+        }
+
+        if (loadout == null || loadout.PrimaryShield != shieldDefinition)
         {
             return false;
         }
@@ -73,7 +77,7 @@ public class ShieldBlocker : MonoBehaviour, IDamageBlocker
             return false;
         }
 
-        ConsumeCharge(damageInfo);
+        ConsumeCharges(damageInfo);
         return true;
     }
 
@@ -94,17 +98,16 @@ public class ShieldBlocker : MonoBehaviour, IDamageBlocker
         }
         forwardXZ.Normalize();
 
-        if (shieldActive)
-        {
-            return Vector3.Angle(forwardXZ, toAttacker) <= FrontBlockAngle * 0.5f;
-        }
-
-        return Vector3.Angle(-forwardXZ, toAttacker) <= BackBlockAngle * 0.5f;
+        float blockAngle = shieldActive ? shieldDefinition.frontBlockAngle : shieldDefinition.backBlockAngle;
+        Vector3 facing = shieldActive ? forwardXZ : -forwardXZ;
+        return Vector3.Angle(facing, toAttacker) <= blockAngle * 0.5f;
     }
 
-    private void ConsumeCharge(DamageInfo damageInfo)
+    private void ConsumeCharges(DamageInfo damageInfo)
     {
-        currentCharges--;
+        int cost = Mathf.Max(1, damageInfo.Amount);
+        currentCharges = Mathf.Max(0, currentCharges - cost);
+
         ShieldBlocked?.Invoke(damageInfo);
         ShieldChargesChanged?.Invoke(currentCharges, MaxCharges);
 
