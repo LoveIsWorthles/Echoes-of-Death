@@ -26,6 +26,7 @@ public class ThrownGrenade : MonoBehaviour
 
     private Rigidbody rb;
     private LineRenderer ring;
+    private Vector3[] ringOffsets;
     private GrenadeDefinition definition;
     private Faction ownerFaction;
     private GameObject owner;
@@ -42,7 +43,7 @@ public class ThrownGrenade : MonoBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotation;
 
         ring = gameObject.AddComponent<LineRenderer>();
-        ring.useWorldSpace = false;
+        ring.useWorldSpace = true;
         ring.loop = true;
         ring.startWidth = ringWidth;
         ring.endWidth = ringWidth;
@@ -100,16 +101,24 @@ public class ThrownGrenade : MonoBehaviour
 
         ring.startColor = ringColor;
         ring.endColor = ringColor;
+
+        // Update world positions each frame to follow the grenade
+        Vector3 center = transform.position;
+        for (int i = 0; i < ringSegments; i++)
+        {
+            ring.SetPosition(i, center + ringOffsets[i]);
+        }
     }
 
     private void BuildRing(float radius)
     {
+        ringOffsets = new Vector3[ringSegments];
         ring.positionCount = ringSegments;
         float angleStep = 360f / ringSegments;
         for (int i = 0; i < ringSegments; i++)
         {
             float rad = Mathf.Deg2Rad * i * angleStep;
-            ring.SetPosition(i, new Vector3(Mathf.Sin(rad) * radius, 0.02f, Mathf.Cos(rad) * radius));
+            ringOffsets[i] = new Vector3(Mathf.Sin(rad) * radius, 0.02f, Mathf.Cos(rad) * radius);
         }
     }
 
@@ -185,17 +194,24 @@ public class ThrownGrenade : MonoBehaviour
         Vector3 high = pos + Vector3.up   * cylinderUp;
 
         Gizmos.color = new Color(1f, 0.3f, 0f, 0.35f);
-        Gizmos.DrawSphere(low,  r);
-        Gizmos.DrawSphere(high, r);
-
-        Gizmos.color = new Color(1f, 0.3f, 0f, 0.6f);
-        Gizmos.DrawWireSphere(low,  r);
-        Gizmos.DrawWireSphere(high, r);
-
-        Vector3[] offsets = { Vector3.forward * r, Vector3.back * r, Vector3.left * r, Vector3.right * r };
-        foreach (Vector3 o in offsets)
+        
+        // Draw the top and bottom circles (using many line segments for Gizmos)
+        int segments = 32;
+        float angleStep = 360f / segments;
+        for (int i = 0; i < segments; i++)
         {
-            Gizmos.DrawLine(low + o, high + o);
+            float a0 = Mathf.Deg2Rad * i * angleStep;
+            float a1 = Mathf.Deg2Rad * (i + 1) * angleStep;
+            Vector3 p0 = new Vector3(Mathf.Sin(a0) * r, 0f, Mathf.Cos(a0) * r);
+            Vector3 p1 = new Vector3(Mathf.Sin(a1) * r, 0f, Mathf.Cos(a1) * r);
+            
+            Gizmos.DrawLine(low + p0, low + p1);
+            Gizmos.DrawLine(high + p0, high + p1);
+            
+            if (i % 8 == 0) // Draw vertical ribs
+            {
+                Gizmos.DrawLine(low + p0, high + p0);
+            }
         }
     }
 
@@ -207,33 +223,47 @@ public class ThrownGrenade : MonoBehaviour
         if (ring != null) ring.enabled = false;
 
         Vector3 center = transform.position;
-        Vector3 low = center + Vector3.down * cylinderDown;
-        Vector3 high = center + Vector3.up * cylinderUp;
+        
+        // Define the cylindrical bounds
+        float radius = definition.radius;
+        float totalHeight = cylinderUp + cylinderDown;
+        Vector3 boxCenter = center + Vector3.up * ((cylinderUp - cylinderDown) * 0.5f);
+        Vector3 halfExtents = new Vector3(radius, totalHeight * 0.5f, radius);
 
-        Collider[] hits = Physics.OverlapCapsule(low, high, definition.radius, affectMask, QueryTriggerInteraction.Ignore);
+        // OverlapBox is more efficient and gives us a starting volume for the cylinder
+        Collider[] hits = Physics.OverlapBox(boxCenter, halfExtents, Quaternion.identity, affectMask, QueryTriggerInteraction.Ignore);
 
         if (debugLogging)
         {
-            Debug.Log($"[ThrownGrenade] {definition.displayName} detonated. radius={definition.radius} hits={hits.Length}");
-            DrawExplosionDebug(center, definition.radius, 2f);
+            Debug.Log($"[ThrownGrenade] {definition.displayName} detonated. radius={radius} hits={hits.Length}");
+            DrawExplosionDebug(center, radius, 2f);
         }
 
-        HashSet<int> processedRoots = new HashSet<int>();
+        HashSet<int> processedTargets = new HashSet<int>();
         bool isFrag = definition.grenadeType == GrenadeType.Frag;
 
         foreach (Collider col in hits)
         {
             if (col == null) continue;
 
-            int rootId = col.transform.root.GetInstanceID();
-            if (!processedRoots.Add(rootId)) continue;
+            // Strict Cylinder Check: Filter out objects in the box corners that are outside the cylinder radius
+            Vector3 closestPoint = col.ClosestPoint(center);
+            Vector3 toHitXZ = closestPoint - center;
+            toHitXZ.y = 0; // Project to XZ plane
+            
+            if (toHitXZ.sqrMagnitude > radius * radius) 
+                continue;
 
             if (isFrag)
             {
                 IDamageable damageable = col.GetComponentInParent<IDamageable>();
                 if (damageable == null) continue;
 
-                Vector3 hitPoint = col.ClosestPoint(center);
+                // Filter by the component's unique ID so multiple WallChunks in a group can be destroyed
+                int targetId = (damageable as Component).gameObject.GetInstanceID();
+                if (!processedTargets.Add(targetId)) continue;
+
+                Vector3 hitPoint = closestPoint;
                 Vector3 incoming = (col.bounds.center - center).sqrMagnitude > 0.0001f
                     ? (col.bounds.center - center).normalized
                     : Vector3.up;
@@ -253,6 +283,9 @@ public class ThrownGrenade : MonoBehaviour
             {
                 EnemyGuardAI ai = col.GetComponentInParent<EnemyGuardAI>();
                 if (ai == null) continue;
+
+                int targetId = ai.gameObject.GetInstanceID();
+                if (!processedTargets.Add(targetId)) continue;
 
                 ai.Stun(definition.StunDuration);
             }
