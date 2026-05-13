@@ -5,8 +5,6 @@
 - Mark Munoz
 - Juan Del Angel
 
----
-
 # 1st Preliminary Delivery
 
 ## Genre
